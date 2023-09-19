@@ -1,14 +1,15 @@
 
 [org 0x7C00]
 
-    section .text
+    xor ax, ax
+    mov ds, ax
 
-    global _bootloader_entry
+    mov al, 'X'
+    mov ah, 0x0E
 
-_bootloader_entry:
-    jmp _bootloader_entry
+    int 0x10
 
-    times 510 - ($ - $$) db 0
+    times 510 - ($ -$$) db 0
 
     db 0x55
     db 0xAA
