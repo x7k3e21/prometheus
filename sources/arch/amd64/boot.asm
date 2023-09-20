@@ -1,6 +1,9 @@
 
 [org 0x7C00]
 
+    section .text
+
+_bootloader_entry:
     xor ax, ax
     mov ds, ax
 
