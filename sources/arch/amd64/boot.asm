@@ -10,10 +10,34 @@ KERNEL_LOCATION equ 0x1000
 _bootloader_entry:
     xor ax, ax
     mov ds, ax
+    mov es, ax
+
+    mov [BOOTLOADER_DRIVE], dl
 
     mov bh, (BIOS_COLOR_BLACK << 4) | (BIOS_COLOR_WHITE)
 
     call clear.start
+
+    mov ah, 02d
+    mov al, 01d
+
+    mov ch, 00d
+    mov dh, 00d
+    
+    mov cl, 02d
+
+    mov bx, 0x7E00
+
+    mov dl, [BOOTLOADER_DRIVE]
+
+    int 0x13
+
+    mov ah, 0x0E
+    mov al, [0x7E00]
+
+    int 0x10
+
+    jmp $
 
     cli
     lgdt [GDT32.descriptor]
@@ -90,6 +114,8 @@ GDT32.descriptor:
     dw GDT32.end - GDT32.start - 1
     dd GDT32.start
 
+BOOTLOADER_DRIVE: db 0
+
     [bits 32]
 
 _pm_bootloader_entry:
@@ -136,6 +162,8 @@ _print_message.end:
 
     db 0x55
     db 0xAA
+
+    times 512 db 'X'
 
     section .bss
 
