@@ -8,36 +8,28 @@ KERNEL_LOCATION equ 0x1000
     section .text
 
 _bootloader_entry:
+    mov [BOOTLOADER_DRIVE], dl
+
     xor ax, ax
     mov ds, ax
     mov es, ax
 
-    mov [BOOTLOADER_DRIVE], dl
-
-    mov bh, (BIOS_COLOR_BLACK << 4) | (BIOS_COLOR_WHITE)
-
-    call clear.start
+    mov bp, 0x8000
+    mov sp, bp
 
     mov ah, 02d
-    mov al, 01d
+    mov al, 02d
 
     mov ch, 00d
     mov dh, 00d
     
     mov cl, 02d
 
-    mov bx, 0x7E00
+    mov bx, KERNEL_LOCATION
 
     mov dl, [BOOTLOADER_DRIVE]
 
     int 0x13
-
-    mov ah, 0x0E
-    mov al, [0x7E00]
-
-    int 0x10
-
-    jmp $
 
     cli
     lgdt [GDT32.descriptor]
@@ -48,47 +40,7 @@ _bootloader_entry:
 
     jmp GDT32.code:_pm_bootloader_entry
 
-clear.start:
-    mov ah, 0x06
-    mov al, 0x00
-
-    mov ch, 00d
-    mov dh, 24d
-
-    mov cl, 00d
-    mov dl, 79d
-
-    int 0x10
-
-clear.done:
-    mov ah, 0x02
-    mov bh, 0x00
-
-    mov dh, 0x00
-    mov dl, 0x00
-
-    int 0x10
-
-    ret
-
-print.start:
-    cld
-
-    mov ah, 0x0E
-
-print.loop:
-    lodsb
-    
-    cmp al, 0
-    je print.done
-
-    int 0x10
-    jmp print.loop
-
-print.done:
-    ret
-
-greeting_message db "Hello, world!", 0
+    hlt
 
 GDT32.start:
     dq 0x0000000000000000
@@ -126,47 +78,12 @@ _pm_bootloader_entry:
     mov fs, ax
     mov gs, ax
 
-    mov esp, stack.top
+    mov esp, 0x9000
+    mov esp, ebp
 
-    mov ebx, greeting_message
-
-    call _print_message.begin
-
-    jmp $
-
-%define VIDEO_MEMORY_ADDRESS 0xB8000
-
-_print_message.begin:
-    pusha
-    mov edx, VIDEO_MEMORY_ADDRESS
-
-_print_message.loop:
-    mov al, [ebx]
-    mov ah, 0x0F
-
-    cmp al, 0
-    je _print_message.end
-
-    mov [edx], ax
-    add ebx, 1
-    add edx, 2 
-
-    jmp _print_message.loop
-
-_print_message.end:
-    popa
-
-    ret
+    jmp KERNEL_LOCATION
 
     times 510 - ($ -$$) db 0
 
     db 0x55
     db 0xAA
-
-    times 512 db 'X'
-
-    section .bss
-
-stack.bottom:
-    resb 16 * 1024
-stack.top:
